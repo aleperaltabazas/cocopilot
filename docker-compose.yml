@@ -1,0 +1,10 @@
+services:
+  cocopilot:
+    stdin_open: true
+    tty: true
+    container_name: cocopilot
+    build:
+      context: .
+    network_mode: host
+    volumes:
+      - ~/.copilot:/home/cocopilot/.copilot
