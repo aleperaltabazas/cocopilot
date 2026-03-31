@@ -75,6 +75,8 @@ TOKEN=$(_extract_token 2>/dev/null) || {
     exec docker run --rm -it \
         --network host \
         -v "$HOME/.copilot:/root/.copilot" \
+        -v "$HOME/.ssh:/root/.ssh:ro" \
+        -v "$HOME/.gitconfig:/root/.gitconfig:ro" \
         "${volume_flags[@]}" \
         -w /workspace \
         cocopilot
@@ -83,6 +85,8 @@ TOKEN=$(_extract_token 2>/dev/null) || {
 exec docker run --rm -it \
     --network host \
     -v "$HOME/.copilot:/root/.copilot" \
+    -v "$HOME/.ssh:/root/.ssh:ro" \
+    -v "$HOME/.gitconfig:/root/.gitconfig:ro" \
     "${volume_flags[@]}" \
     -w /workspace \
     -e "COPILOT_GITHUB_TOKEN=${TOKEN}" \
