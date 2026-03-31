@@ -5,4 +5,6 @@ RUN apt-get update && apt-get install -y \
 
 RUN curl -fsSL https://gh.io/copilot-install | bash
 
-ENTRYPOINT ["copilot"]
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["entrypoint.sh"]

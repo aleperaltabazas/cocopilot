@@ -2,7 +2,12 @@
 # copilot-docker: Run the cocopilot Docker image with the host's Copilot auth
 # token injected from the GNOME keyring, so no re-login is needed.
 #
-# Usage: copilot-docker
+# Directories are copied into the container as snapshots — edits stay isolated
+# inside the container and are lost when it exits.
+#
+# Usage: copilot-docker [dir...]
+#   No args:      uses the current directory
+#   One or more:  each directory is copied into /workspace/<basename>
 
 set -euo pipefail
 
@@ -46,6 +51,22 @@ sys.exit(2)
 PYEOF
 }
 
+# --- Build directory volume flags ---
+dirs=("${@:-$PWD}")
+volume_flags=()
+declare -A seen_basenames
+
+for dir in "${dirs[@]}"; do
+    abs=$(realpath "$dir") || { echo "copilot-docker: cannot resolve path: $dir" >&2; exit 1; }
+    base=$(basename "$abs")
+    if [[ -n "${seen_basenames[$base]:-}" ]]; then
+        echo "copilot-docker: basename collision — two directories named '$base'" >&2
+        exit 1
+    fi
+    seen_basenames[$base]=1
+    volume_flags+=(-v "${abs}:/mnt/source/${base}:ro")
+done
+
 TOKEN=$(_extract_token 2>/dev/null) || {
     echo "copilot-docker: could not read Copilot token from keyring." >&2
     echo "  Make sure you are logged in on the host ('copilot login') and" >&2
@@ -54,11 +75,15 @@ TOKEN=$(_extract_token 2>/dev/null) || {
     exec docker run --rm -it \
         --network host \
         -v "$HOME/.copilot:/root/.copilot" \
+        "${volume_flags[@]}" \
+        -w /workspace \
         cocopilot
 }
 
 exec docker run --rm -it \
     --network host \
     -v "$HOME/.copilot:/root/.copilot" \
+    "${volume_flags[@]}" \
+    -w /workspace \
     -e "COPILOT_GITHUB_TOKEN=${TOKEN}" \
     cocopilot
