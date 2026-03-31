@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# copilot-docker: Run a Docker container with the host's Copilot auth token
-# injected from the GNOME keyring, so no re-login is needed inside the container.
+# copilot-docker: Run the cocopilot Docker image with the host's Copilot auth
+# token injected from the GNOME keyring, so no re-login is needed.
 #
-# Usage: copilot-docker [docker run args...] <image> [command...]
-# Example: copilot-docker --rm -it my-image copilot
+# Usage: copilot-docker
 
 set -euo pipefail
 
@@ -47,15 +46,19 @@ sys.exit(2)
 PYEOF
 }
 
-SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
-COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
-
 TOKEN=$(_extract_token 2>/dev/null) || {
     echo "copilot-docker: could not read Copilot token from keyring." >&2
     echo "  Make sure you are logged in on the host ('copilot login') and" >&2
     echo "  the GNOME keyring daemon is running." >&2
     echo "  Falling back: container will need to run 'copilot login' manually." >&2
-    exec docker compose -f "${COMPOSE_FILE}" run --rm cocopilot
+    exec docker run --rm -it \
+        --network host \
+        -v "$HOME/.copilot:/root/.copilot" \
+        cocopilot
 }
 
-exec docker compose -f "${COMPOSE_FILE}" run --rm -e "COPILOT_GITHUB_TOKEN=${TOKEN}" cocopilot
+exec docker run --rm -it \
+    --network host \
+    -v "$HOME/.copilot:/root/.copilot" \
+    -e "COPILOT_GITHUB_TOKEN=${TOKEN}" \
+    cocopilot

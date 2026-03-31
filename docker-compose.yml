@@ -1,9 +1,0 @@
-services:
-  cocopilot:
-    stdin_open: true
-    tty: true
-    build:
-      context: .
-    network_mode: host
-    volumes:
-      - ~/.copilot:/root/.copilot
